@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FILE: res/xml/network_security_config.xml
+    FUNGSI: Mengatur kebijakan keamanan koneksi network
+-->
+<network-security-config>
+
+    <!-- Konfigurasi PRODUCTION: blokir semua HTTP -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- KONFIGURASI KHUSUS DEVELOPMENT — hapus sebelum rilis -->
+    <domain-config cleartextTrafficPermitted="true">
+
+        <!-- IP emulator Android (10.0.2.2 = localhost komputer) -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+
+        <!-- localhost biasa -->
+        <domain includeSubdomains="true">192.168.24.87</domain>
+
+        <!-- Ganti dengan IP komputer kamu jika pakai HP fisik -->
+        <!-- Cek IP lewat terminal Laragon: ipconfig -->
+        <!-- Contoh: <domain includeSubdomains="true">192.168.1.100</domain> -->
+
+    </domain-config>
+
+</network-security-config>
