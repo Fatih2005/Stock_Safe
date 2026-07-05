@@ -135,20 +135,25 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             Log.d("ProductVM", "updateProduct start id=$id name=${product.name}")
             val result = repository.updateProduct(id, product)
 
-            if (result is Result.Success) {
+            // PENYESUAIAN BARU: Transformasi tipe Result agar sama dengan fungsi lainnya
+            val transformedResult: Result<Unit> = when (result) {
+                is Result.Success -> Result.Success(Unit)
+                is Result.Error   -> Result.Error(result.message)
+                is Result.Loading -> Result.Loading
+            }
+
+            if (transformedResult is Result.Success) {
                 Log.d("ProductVM", "updateProduct success -> getAllProducts + onSuccess")
                 getAllProducts()
                 onSuccess()
             }
 
-            _operationState.value = result
+            _operationState.value = transformedResult
         }
     }
 
     /**
      * Menghapus produk.
-     * ✅ Perbaikan: langsung panggil getAllProducts() untuk refresh daftar dari database,
-     *    sehingga item langsung hilang dari tampilan tanpa harus keluar layar.
      */
     fun deleteProduct(id: Int) {
         viewModelScope.launch {
@@ -164,8 +169,23 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
             }
 
             if (transformedResult is Result.Success) {
-                Log.d("ProductVM", "deleteProduct success -> refresh full list")
-                getAllProducts() // 🔄 langsung muat ulang data dari database
+                Log.d("ProductVM", "deleteProduct success -> hapus dari memori lokal")
+
+                // Ambil data list produk yang sedang tampil saat ini
+                val currentState = _productsState.value
+
+                if (currentState is Result.Success) {
+                    // Buang produk yang id-nya baru saja dihapus dari dalam List
+                    val updatedList = currentState.data.filter { it.id != id }
+
+                    // Pancing UI dengan Loading selama 50 milidetik agar layar
+                    // benar-benar "berkedip" dan merender ulang list yang baru.
+                    _productsState.value = Result.Loading
+                    delay(50L)
+
+                    // Masukkan list yang sudah bersih ke layar
+                    _productsState.value = Result.Success(updatedList)
+                }
             }
 
             _operationState.value = transformedResult
